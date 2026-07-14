@@ -12,6 +12,11 @@
       "name": "Piuco",
       "image": "sponsors/1784044758552-piuco.png",
       "active": true
+    },
+    {
+      "name": "Ironshop",
+      "image": "sponsors/1784044913366-ironshop.png",
+      "active": true
     }
   ]
 }
