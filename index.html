@@ -31,9 +31,12 @@
     max-height: 80%;
     object-fit: contain;
     opacity: 0;
-    transition: opacity 0.7s ease;
+    transform: scale(var(--logo-scale, 1));
+    transition:
+        opacity 0.7s ease,
+        transform 0.2s ease;
     filter: drop-shadow(0 4px 24px rgba(0,0,0,0.35));
-  }
+}
   .slide.visible {
     opacity: 1;
   }
@@ -81,9 +84,27 @@
   const bgParam = (params.get('bg') || 'black').toLowerCase();
   const showLabels = params.get('labels') === '1';
   const intervalOverride = params.get('interval') ? parseFloat(params.get('interval')) : null;
+  const logoScale = Math.max(0.1, parseFloat(params.get('scale') || "1"));
+  document.documentElement.style.setProperty('--logo-scale', logoScale);
 
   const bgEl = document.getElementById('bg');
-  const map = { transparent: 'transparent', black: '#000000', green: '#00FF00', greenscreen: '#00FF00' };
+  switch (bgParam) {
+    case 'transparent':
+        bgEl.style.background = 'transparent';
+        break;
+
+    case 'white':
+        bgEl.style.background = 'rgba(255,255,255,0.30)';
+        break;
+
+    case 'black':
+        bgEl.style.background = 'rgba(0,0,0,0.30)';
+        break;
+
+    default:
+        // Continua aceitando qualquer cor hexadecimal
+        bgEl.style.background = '#' + bgParam.replace('#', '');
+}
   bgEl.style.background = map[bgParam] || ('#' + bgParam.replace('#', ''));
 
   const imgA = document.getElementById('imgA');
