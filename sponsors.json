@@ -2,5 +2,11 @@
   "settings": {
     "intervalSeconds": 5
   },
-  "sponsors": []
+  "sponsors": [
+    {
+      "name": "Posto Nandi",
+      "image": "sponsors/1784044734450-posto-nandi.png",
+      "active": true
+    }
+  ]
 }
