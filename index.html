@@ -4,181 +4,221 @@
 <meta charset="UTF-8">
 <title>Slideshow de Patrocinadores</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: transparent;
-  }
-  #bg {
-    position: fixed;
-    inset: 0;
-    background: #000; /* trocado via JS conforme parâmetro ?bg= */
-  }
-  #stage {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .slide {
-    position: absolute;
-    max-width: 88%;
-    max-height: 80%;
-    object-fit: contain;
-    opacity: 0;
-    const logoScale = Math.max(0.1, parseFloat(params.get('scale') || "1"));
 
-    imgA.style.maxWidth = (88 * logoScale) + "%";
-    imgA.style.maxHeight = (80 * logoScale) + "%";
-    
-    imgB.style.maxWidth = (88 * logoScale) + "%";
-    imgB.style.maxHeight = (80 * logoScale) + "%";
-    transition:
-        opacity 0.7s ease,
-        transform 0.2s ease;
-    filter: drop-shadow(0 4px 24px rgba(0,0,0,0.35));
+<style>
+html, body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:transparent;
 }
-  .slide.visible {
-    opacity: 1;
-  }
-  #label {
-    position: absolute;
-    bottom: 8%;
-    left: 50%;
-    transform: translateX(-50%);
-    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
-    font-size: clamp(14px, 2.2vw, 26px);
-    font-weight: 600;
-    color: #fff;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
-    opacity: 0;
-    transition: opacity 0.7s ease;
-    white-space: nowrap;
-    letter-spacing: 0.02em;
-  }
-  #label.visible { opacity: 1; }
-  #empty {
-    display: none;
-    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
-    color: rgba(255,255,255,0.35);
-    font-size: 16px;
-  }
+
+#bg{
+    position:fixed;
+    inset:0;
+    background:transparent;
+}
+
+#stage{
+    position:fixed;
+    inset:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.slide{
+    position:absolute;
+    object-fit:contain;
+    opacity:0;
+    transition:opacity .7s ease;
+    filter:drop-shadow(0 4px 24px rgba(0,0,0,.35));
+}
+
+.slide.visible{
+    opacity:1;
+}
+
+#label{
+    position:absolute;
+    bottom:8%;
+    left:50%;
+    transform:translateX(-50%);
+    font-family:-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:clamp(14px,2.2vw,26px);
+    font-weight:600;
+    color:#fff;
+    text-shadow:0 2px 8px rgba(0,0,0,.6);
+    opacity:0;
+    transition:opacity .7s ease;
+    white-space:nowrap;
+}
+
+#label.visible{
+    opacity:1;
+}
+
+#empty{
+    display:none;
+    color:rgba(255,255,255,.35);
+    font-family:-apple-system,"Segoe UI",Roboto,sans-serif;
+}
 </style>
+
 </head>
+
 <body>
-  <div id="bg"></div>
-  <div id="stage">
-    <img id="imgA" class="slide" alt="">
-    <img id="imgB" class="slide" alt="">
+
+<div id="bg"></div>
+
+<div id="stage">
+    <img id="imgA" class="slide">
+    <img id="imgB" class="slide">
     <div id="label"></div>
     <div id="empty">Nenhum patrocinador ativo</div>
-  </div>
+</div>
 
 <script>
-(function () {
-  const params = new URLSearchParams(location.search);
 
-  // --- Configuração via parâmetros de URL ---
-  // ?bg=transparent | black | green | <hex sem #>
-  // ?interval=5   -> segundos por slide (sobrepõe o valor do sponsors.json)
-  // ?labels=1     -> mostra o nome do patrocinador embaixo da logo
-  const bgParam = (params.get('bg') || 'black').toLowerCase();
-  const showLabels = params.get('labels') === '1';
-  const intervalOverride = params.get('interval') ? parseFloat(params.get('interval')) : null;
-  const logoScale = Math.max(0.1, parseFloat(params.get('scale') || "1"));
-  document.documentElement.style.setProperty('--logo-scale', logoScale);
+(function(){
 
-  const bgEl = document.getElementById('bg');
-  switch (bgParam) {
-    case 'transparent':
-        bgEl.style.background = 'transparent';
+const params=new URLSearchParams(location.search);
+
+const bgParam=(params.get("bg")||"transparent").toLowerCase();
+const showLabels=params.get("labels")=="1";
+const intervalOverride=params.get("interval")?parseFloat(params.get("interval")):null;
+
+const scale=Math.max(.1,parseFloat(params.get("scale")||"1"));
+
+const bg=document.getElementById("bg");
+
+switch(bgParam){
+
+    case "transparent":
+        bg.style.background="transparent";
         break;
 
-    case 'white':
-        bgEl.style.background = 'rgba(255,255,255,0.30)';
+    case "white":
+        bg.style.background="rgba(255,255,255,.30)";
         break;
 
-    case 'black':
-        bgEl.style.background = 'rgba(0,0,0,0.30)';
+    case "black":
+        bg.style.background="rgba(0,0,0,.30)";
         break;
 
     default:
-        // Continua aceitando qualquer cor hexadecimal
-        bgEl.style.background = '#' + bgParam.replace('#', '');
+        bg.style.background="#" + bgParam.replace("#","");
 }
-  bgEl.style.background = map[bgParam] || ('#' + bgParam.replace('#', ''));
 
-  const imgA = document.getElementById('imgA');
-  const imgB = document.getElementById('imgB');
-  const labelEl = document.getElementById('label');
-  const emptyEl = document.getElementById('empty');
-  let front = imgA, back = imgB;
+const imgA=document.getElementById("imgA");
+const imgB=document.getElementById("imgB");
 
-  let sponsors = [];
-  let intervalMs = 5000;
-  let idx = 0;
-  let dataLoaded = false;
+imgA.style.maxWidth=(88*scale)+"%";
+imgA.style.maxHeight=(80*scale)+"%";
 
-  function b64DecodeNothingNeeded() {}
+imgB.style.maxWidth=(88*scale)+"%";
+imgB.style.maxHeight=(80*scale)+"%";
 
-  async function loadData() {
-    try {
-      const res = await fetch('sponsors.json?t=' + Date.now(), { cache: 'no-store' });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const data = await res.json();
-      sponsors = (data.sponsors || []).filter(s => s.active);
-      const secs = intervalOverride || (data.settings && data.settings.intervalSeconds) || 5;
-      intervalMs = Math.max(1.5, secs) * 1000;
-      dataLoaded = true;
-    } catch (e) {
-      console.error('Falha ao carregar sponsors.json', e);
+const label=document.getElementById("label");
+const empty=document.getElementById("empty");
+
+let front=imgA;
+let back=imgB;
+
+let sponsors=[];
+let intervalMs=5000;
+let idx=0;
+let dataLoaded=false;
+
+async function loadData(){
+
+    try{
+
+        const res=await fetch("sponsors.json?t="+Date.now(),{cache:"no-store"});
+
+        if(!res.ok) throw new Error(res.status);
+
+        const data=await res.json();
+
+        sponsors=(data.sponsors||[]).filter(s=>s.active);
+
+        const secs=intervalOverride||(data.settings&&data.settings.intervalSeconds)||5;
+
+        intervalMs=Math.max(1.5,secs)*1000;
+
+        dataLoaded=true;
+
+    }catch(e){
+
+        console.error(e);
+
     }
-  }
 
-  function showNext() {
-    if (!dataLoaded) return;
-    if (!sponsors.length) {
-      imgA.classList.remove('visible');
-      imgB.classList.remove('visible');
-      labelEl.classList.remove('visible');
-      emptyEl.style.display = 'block';
-      return;
+}
+
+function showNext(){
+
+    if(!dataLoaded) return;
+
+    if(!sponsors.length){
+
+        imgA.classList.remove("visible");
+        imgB.classList.remove("visible");
+        label.classList.remove("visible");
+        empty.style.display="block";
+        return;
+
     }
-    emptyEl.style.display = 'none';
 
-    const sponsor = sponsors[idx % sponsors.length];
+    empty.style.display="none";
+
+    const sponsor=sponsors[idx%sponsors.length];
+
     idx++;
 
-    back.src = sponsor.image;
-    back.onload = () => {
-      front.classList.remove('visible');
-      back.classList.add('visible');
-      const tmp = front; front = back; back = tmp;
+    back.onload=function(){
 
-      if (showLabels && sponsor.name) {
-        labelEl.textContent = sponsor.name;
-        labelEl.classList.add('visible');
-      } else {
-        labelEl.classList.remove('visible');
-      }
+        front.classList.remove("visible");
+        back.classList.add("visible");
+
+        const tmp=front;
+        front=back;
+        back=tmp;
+
+        if(showLabels && sponsor.name){
+
+            label.textContent=sponsor.name;
+            label.classList.add("visible");
+
+        }else{
+
+            label.classList.remove("visible");
+
+        }
+
     };
-  }
 
-  function loop() {
+    back.src=sponsor.image;
+
+}
+
+function loop(){
+
     showNext();
-    setTimeout(loop, intervalMs);
-  }
 
-  // Recarrega os dados periodicamente para refletir alterações feitas no celular,
-  // sem precisar reiniciar a fonte de navegador na live.
-  loadData().then(() => { loop(); });
-  setInterval(loadData, 20000);
+    setTimeout(loop,intervalMs);
+
+}
+
+loadData().then(loop);
+
+setInterval(loadData,20000);
+
 })();
+
 </script>
+
 </body>
 </html>
