@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Controle de Patrocinadores</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #101218;
+    --panel: #171a22;
+    --panel-2: #1e2230;
+    --border: #2a2f3d;
+    --text: #f2f2f0;
+    --muted: #8b90a0;
+    --accent: #ff4d4d;   /* vermelho "on air" */
+    --accent-dim: #4a1f1f;
+    --ok: #35d07f;
+    --warn: #ffb020;
+    --radius: 14px;
+    font-family: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100%;
+  }
+  body {
+    padding: 20px 16px 80px;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+  }
+  .brand {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .brand .eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .brand h1 {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 21px;
+    margin: 0;
+    font-weight: 700;
+  }
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .status-pill .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--muted);
+  }
+  .status-pill.on { color: var(--ok); border-color: rgba(53,208,127,0.35); }
+  .status-pill.on .dot { background: var(--ok); box-shadow: 0 0 8px var(--ok); animation: pulse 1.6s infinite; }
+  .status-pill.off { color: var(--accent); border-color: rgba(255,77,77,0.35); }
+  .status-pill.off .dot { background: var(--accent); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .card h2 {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 14px;
+    margin: 0 0 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 10px 0 5px;
+  }
+  input[type=text], input[type=password], input[type=number] {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 11px 12px;
+    border-radius: 10px;
+    font-size: 15px;
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .file-drop {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px dashed var(--border);
+    color: var(--muted);
+    padding: 14px 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    text-align: center;
+    margin-top: 5px;
+  }
+  input[type=file] { width: 100%; color: var(--muted); font-size: 13px; }
+
+  button {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: #1a0a0a; width: 100%; margin-top: 14px; }
+  .btn-primary:disabled { opacity: 0.5; }
+  .btn-secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); font-size: 12px; padding: 7px 10px; }
+  .btn-danger { background: transparent; color: var(--accent); border: 1px solid rgba(255,77,77,0.4); font-size: 12px; padding: 7px 10px; }
+
+  #setupCard.collapsed .fields { display: none; }
+  .setup-summary { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--muted); }
+
+  .sponsor-list { display: flex; flex-direction: column; gap: 10px; }
+  .sponsor-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px;
+  }
+  .sponsor-row img {
+    width: 44px; height: 44px; object-fit: contain;
+    background: #0b0c10; border-radius: 8px; flex-shrink: 0;
+  }
+  .sponsor-info { flex: 1; min-width: 0; }
+  .sponsor-info .name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sponsor-info .meta { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--muted); }
+  .sponsor-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+  .row-btns { display: flex; gap: 6px; }
+  .icon-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    width: 30px; height: 30px; border-radius: 8px; padding: 0; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .switch { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider-toggle {
+    position: absolute; inset: 0; background: var(--border); border-radius: 999px; cursor: pointer; transition: 0.2s;
+  }
+  .slider-toggle::before {
+    content: ""; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px;
+    background: #fff; border-radius: 50%; transition: 0.2s;
+  }
+  .switch input:checked + .slider-toggle { background: var(--ok); }
+  .switch input:checked + .slider-toggle::before { transform: translateX(18px); }
+
+  .empty-state {
+    text-align: center; color: var(--muted); font-size: 13px; padding: 24px 10px;
+  }
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 16px; border-radius: 10px; font-size: 13px; opacity: 0; transition: 0.25s;
+    pointer-events: none; max-width: 90%; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.error { border-color: rgba(255,77,77,0.5); color: var(--accent); }
+
+  .preview-link {
+    display: block; text-align: center; font-family: "JetBrains Mono", monospace;
+    font-size: 12px; color: var(--muted); margin-top: 4px; text-decoration: none;
+  }
+  .preview-link:active { color: var(--accent); }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="eyebrow">Backstage</span>
+    <h1>Patrocinadores</h1>
+  </div>
+  <div id="statusPill" class="status-pill off"><span class="dot"></span><span id="statusText">offline</span></div>
+</header>
+
+<div class="card" id="setupCard">
+  <h2>Conexão com o repositório</h2>
+  <div id="setupSummary" class="setup-summary" style="display:none;"></div>
+  <div class="fields">
+    <label for="fOwner">Usuário/organização do GitHub</label>
+    <input type="text" id="fOwner" placeholder="ex: joaostreamer" autocapitalize="off" autocorrect="off">
+    <label for="fRepo">Nome do repositório</label>
+    <input type="text" id="fRepo" placeholder="ex: patrocinadores-live" autocapitalize="off" autocorrect="off">
+    <label for="fBranch">Branch</label>
+    <input type="text" id="fBranch" placeholder="main" value="main" autocapitalize="off" autocorrect="off">
+    <label for="fToken">Token de acesso (fine-grained, só deste repositório)</label>
+    <input type="password" id="fToken" placeholder="github_pat_xxx" autocapitalize="off" autocorrect="off">
+    <div class="hint">Crie em github.com → Settings → Developer settings → Fine-grained tokens. Dê acesso só a este repositório, com permissão "Contents: Read and write". O token fica salvo apenas neste celular.</div>
+    <button class="btn-primary" id="btnSaveSetup">Salvar conexão</button>
+  </div>
+</div>
+
+<div class="card" id="settingsCard" style="display:none;">
+  <h2>Exibição</h2>
+  <label for="fInterval">Segundos por slide</label>
+  <input type="number" id="fInterval" min="1" step="0.5" value="5">
+  <button class="btn-primary" id="btnSaveInterval">Salvar tempo de troca</button>
+</div>
+
+<div class="card" id="addCard" style="display:none;">
+  <h2>Adicionar patrocinador</h2>
+  <label for="fName">Nome</label>
+  <input type="text" id="fName" placeholder="Nome do patrocinador">
+  <label for="fImage">Logo (imagem)</label>
+  <input type="file" id="fImage" accept="image/*">
+  <button class="btn-primary" id="btnAdd">Adicionar patrocinador</button>
+</div>
+
+<div class="card" id="listCard" style="display:none;">
+  <h2>No ar</h2>
+  <div id="sponsorList" class="sponsor-list"></div>
+  <div id="emptyState" class="empty-state" style="display:none;">Nenhum patrocinador cadastrado ainda.</div>
+</div>
+
+<a id="previewLink" class="preview-link" href="index.html" target="_blank">abrir pré-visualização do slideshow →</a>
+
+<div id="toast" class="toast"></div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const LS_KEY = 'sponsor_admin_config_v1';
+
+  let cfg = null;       // { owner, repo, branch, token }
+  let currentSha = null;
+  let currentData = null; // { settings, sponsors }
+  let busy = false;
+
+  // ---------- utilidades ----------
+  function toast(msg, isError) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.toggle('error', !!isError);
+    t.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => t.classList.remove('show'), 3200);
+  }
+
+  function b64EncodeUnicode(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+  function b64DecodeUnicode(str) {
+    return decodeURIComponent(escape(atob(str)));
+  }
+
+  function setBusy(v) {
+    busy = v;
+    document.querySelectorAll('button').forEach(b => b.disabled = v);
+  }
+
+  function setStatus(ok, text) {
+    const pill = $('statusPill');
+    pill.className = 'status-pill ' + (ok ? 'on' : 'off');
+    $('statusText').textContent = text;
+  }
+
+  // ---------- config local ----------
+  function loadConfig() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) cfg = JSON.parse(raw);
+    } catch (e) {}
+  }
+  function saveConfig() {
+    localStorage.setItem(LS_KEY, JSON.stringify(cfg));
+  }
+
+  function applySetupUI() {
+    if (cfg && cfg.owner && cfg.repo && cfg.token) {
+      $('setupCard').classList.add('collapsed');
+      $('setupSummary').style.display = 'block';
+      $('setupSummary').textContent = cfg.owner + '/' + cfg.repo + ' (' + (cfg.branch || 'main') + ')';
+      $('previewLink').href = 'https://' + cfg.owner + '.github.io/' + cfg.repo + '/index.html';
+    } else {
+      $('setupCard').classList.remove('collapsed');
+      $('setupSummary').style.display = 'none';
+    }
+  }
+
+  // ---------- GitHub API ----------
+  const API = 'https://api.github.com';
+
+  async function ghRequest(path, options) {
+    options = options || {};
+    options.headers = Object.assign({
+      'Authorization': 'Bearer ' + cfg.token,
+      'Accept': 'application/vnd.github+json',
+    }, options.headers || {});
+    const res = await fetch(API + path, options);
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error('GitHub API ' + res.status + ': ' + body.slice(0, 200));
+    }
+    return res.json();
+  }
+
+  async function fetchSponsorsJson() {
+    const path = '/repos/' + cfg.owner + '/' + cfg.repo + '/contents/sponsors.json?ref=' + (cfg.branch || 'main');
+    const file = await ghRequest(path);
+    currentSha = file.sha;
+    currentData = JSON.parse(b64DecodeUnicode(file.content));
+    if (!currentData.sponsors) currentData.sponsors = [];
+    if (!currentData.settings) currentData.settings = { intervalSeconds: 5 };
+    return currentData;
+  }
+
+  async function writeSponsorsJson(message) {
+    const path = '/repos/' + cfg.owner + '/' + cfg.repo + '/contents/sponsors.json';
+    const body = {
+      message: message || 'Atualiza sponsors.json',
+      content: b64EncodeUnicode(JSON.stringify(currentData, null, 2)),
+      sha: currentSha,
+      branch: cfg.branch || 'main',
+    };
+    const res = await ghRequest(path, { method: 'PUT', body: JSON.stringify(body) });
+    currentSha = res.content.sha;
+  }
+
+  async function uploadImage(fileDataUrl, filename) {
+    const base64 = fileDataUrl.split(',')[1];
+    const path = '/repos/' + cfg.owner + '/' + cfg.repo + '/contents/sponsors/' + filename;
+    const body = {
+      message: 'Adiciona logo ' + filename,
+      content: base64,
+      branch: cfg.branch || 'main',
+    };
+    await ghRequest(path, { method: 'PUT', body: JSON.stringify(body) });
+    return 'sponsors/' + filename;
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+  }
+
+  function slugify(name) {
+    return name.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '') || 'logo';
+  }
+
+  // ---------- render ----------
+  function render() {
+    if (!currentData) return;
+    $('fInterval').value = currentData.settings.intervalSeconds || 5;
+
+    const list = $('sponsorList');
+    list.innerHTML = '';
+    const sponsors = currentData.sponsors;
+    $('emptyState').style.display = sponsors.length ? 'none' : 'block';
+
+    sponsors.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.className = 'sponsor-row';
+      row.innerHTML = `
+        <img src="${s.image}" alt="">
+        <div class="sponsor-info">
+          <div class="name">${escapeHtml(s.name)}</div>
+          <div class="meta">#${i + 1}</div>
+        </div>
+        <div class="sponsor-actions">
+          <label class="switch">
+            <input type="checkbox" data-action="toggle" data-idx="${i}" ${s.active ? 'checked' : ''}>
+            <span class="slider-toggle"></span>
+          </label>
+          <div class="row-btns">
+            <button class="icon-btn" data-action="up" data-idx="${i}" title="Mover para cima">↑</button>
+            <button class="icon-btn" data-action="down" data-idx="${i}" title="Mover para baixo">↓</button>
+            <button class="btn-danger" data-action="delete" data-idx="${i}">Excluir</button>
+          </div>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // ---------- ações ----------
+  async function refresh() {
+    setBusy(true);
+    try {
+      await fetchSponsorsJson();
+      render();
+      setStatus(true, 'conectado');
+      $('settingsCard').style.display = 'block';
+      $('addCard').style.display = 'block';
+      $('listCard').style.display = 'block';
+    } catch (e) {
+      console.error(e);
+      setStatus(false, 'erro de conexão');
+      toast('Não foi possível conectar ao repositório. Confira usuário, repositório e token.', true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function withRetry(action) {
+    try {
+      await action();
+    } catch (e) {
+      // possível conflito de sha: refaz leitura e tenta de novo uma vez
+      await fetchSponsorsJson();
+      await action();
+    }
+  }
+
+  $('btnSaveSetup').addEventListener('click', async () => {
+    const owner = $('fOwner').value.trim();
+    const repo = $('fRepo').value.trim();
+    const branch = $('fBranch').value.trim() || 'main';
+    const token = $('fToken').value.trim();
+    if (!owner || !repo || !token) {
+      toast('Preencha usuário, repositório e token.', true);
+      return;
+    }
+    cfg = { owner, repo, branch, token };
+    saveConfig();
+    applySetupUI();
+    await refresh();
+  });
+
+  $('btnSaveInterval').addEventListener('click', async () => {
+    const val = parseFloat($('fInterval').value) || 5;
+    setBusy(true);
+    try {
+      await withRetry(async () => {
+        currentData.settings.intervalSeconds = val;
+        await writeSponsorsJson('Ajusta tempo de exibição para ' + val + 's');
+      });
+      toast('Tempo de exibição salvo.');
+    } catch (e) {
+      console.error(e);
+      toast('Erro ao salvar. Tente novamente.', true);
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  $('btnAdd').addEventListener('click', async () => {
+    const name = $('fName').value.trim();
+    const fileInput = $('fImage');
+    const file = fileInput.files[0];
+    if (!name || !file) {
+      toast('Informe o nome e escolha uma imagem.', true);
+      return;
+    }
+    setBusy(true);
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+      const filename = Date.now() + '-' + slugify(name) + '.' + ext;
+      const imagePath = await uploadImage(dataUrl, filename);
+
+      await withRetry(async () => {
+        currentData.sponsors.push({ name, image: imagePath, active: true });
+        await writeSponsorsJson('Adiciona patrocinador: ' + name);
+      });
+
+      $('fName').value = '';
+      fileInput.value = '';
+      render();
+      toast(name + ' adicionado.');
+    } catch (e) {
+      console.error(e);
+      toast('Erro ao adicionar patrocinador.', true);
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  $('sponsorList').addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const idx = parseInt(btn.dataset.idx, 10);
+    if (action === 'toggle') return; // tratado no evento change abaixo
+
+    setBusy(true);
+    try {
+      await withRetry(async () => {
+        const sponsors = currentData.sponsors;
+        if (action === 'delete') {
+          if (!confirm('Excluir "' + sponsors[idx].name + '"?')) { throw new Error('cancelado'); }
+          sponsors.splice(idx, 1);
+        } else if (action === 'up' && idx > 0) {
+          [sponsors[idx - 1], sponsors[idx]] = [sponsors[idx], sponsors[idx - 1]];
+        } else if (action === 'down' && idx < sponsors.length - 1) {
+          [sponsors[idx + 1], sponsors[idx]] = [sponsors[idx], sponsors[idx + 1]];
+        }
+        await writeSponsorsJson('Atualiza lista de patrocinadores');
+      });
+      render();
+    } catch (e) {
+      if (e.message !== 'cancelado') {
+        console.error(e);
+        toast('Erro ao atualizar. Tente novamente.', true);
+        await refresh();
+      }
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  $('sponsorList').addEventListener('change', async (e) => {
+    const el = e.target.closest('[data-action="toggle"]');
+    if (!el) return;
+    const idx = parseInt(el.dataset.idx, 10);
+    setBusy(true);
+    try {
+      await withRetry(async () => {
+        currentData.sponsors[idx].active = el.checked;
+        await writeSponsorsJson('Alterna status de ' + currentData.sponsors[idx].name);
+      });
+    } catch (e) {
+      console.error(e);
+      toast('Erro ao atualizar status.', true);
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  // ---------- boot ----------
+  loadConfig();
+  applySetupUI();
+  if (cfg && cfg.owner && cfg.repo && cfg.token) {
+    $('fOwner').value = cfg.owner;
+    $('fRepo').value = cfg.repo;
+    $('fBranch').value = cfg.branch || 'main';
+    refresh();
+  }
+})();
+</script>
+</body>
+</html>

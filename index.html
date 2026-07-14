@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Slideshow de Patrocinadores</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+  }
+  #bg {
+    position: fixed;
+    inset: 0;
+    background: #000; /* trocado via JS conforme parâmetro ?bg= */
+  }
+  #stage {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .slide {
+    position: absolute;
+    max-width: 88%;
+    max-height: 80%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.7s ease;
+    filter: drop-shadow(0 4px 24px rgba(0,0,0,0.35));
+  }
+  .slide.visible {
+    opacity: 1;
+  }
+  #label {
+    position: absolute;
+    bottom: 8%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: clamp(14px, 2.2vw, 26px);
+    font-weight: 600;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    opacity: 0;
+    transition: opacity 0.7s ease;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+  #label.visible { opacity: 1; }
+  #empty {
+    display: none;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: rgba(255,255,255,0.35);
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+  <div id="bg"></div>
+  <div id="stage">
+    <img id="imgA" class="slide" alt="">
+    <img id="imgB" class="slide" alt="">
+    <div id="label"></div>
+    <div id="empty">Nenhum patrocinador ativo</div>
+  </div>
+
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+
+  // --- Configuração via parâmetros de URL ---
+  // ?bg=transparent | black | green | <hex sem #>
+  // ?interval=5   -> segundos por slide (sobrepõe o valor do sponsors.json)
+  // ?labels=1     -> mostra o nome do patrocinador embaixo da logo
+  const bgParam = (params.get('bg') || 'black').toLowerCase();
+  const showLabels = params.get('labels') === '1';
+  const intervalOverride = params.get('interval') ? parseFloat(params.get('interval')) : null;
+
+  const bgEl = document.getElementById('bg');
+  const map = { transparent: 'transparent', black: '#000000', green: '#00FF00', greenscreen: '#00FF00' };
+  bgEl.style.background = map[bgParam] || ('#' + bgParam.replace('#', ''));
+
+  const imgA = document.getElementById('imgA');
+  const imgB = document.getElementById('imgB');
+  const labelEl = document.getElementById('label');
+  const emptyEl = document.getElementById('empty');
+  let front = imgA, back = imgB;
+
+  let sponsors = [];
+  let intervalMs = 5000;
+  let idx = 0;
+  let dataLoaded = false;
+
+  function b64DecodeNothingNeeded() {}
+
+  async function loadData() {
+    try {
+      const res = await fetch('sponsors.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      sponsors = (data.sponsors || []).filter(s => s.active);
+      const secs = intervalOverride || (data.settings && data.settings.intervalSeconds) || 5;
+      intervalMs = Math.max(1.5, secs) * 1000;
+      dataLoaded = true;
+    } catch (e) {
+      console.error('Falha ao carregar sponsors.json', e);
+    }
+  }
+
+  function showNext() {
+    if (!dataLoaded) return;
+    if (!sponsors.length) {
+      imgA.classList.remove('visible');
+      imgB.classList.remove('visible');
+      labelEl.classList.remove('visible');
+      emptyEl.style.display = 'block';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    const sponsor = sponsors[idx % sponsors.length];
+    idx++;
+
+    back.src = sponsor.image;
+    back.onload = () => {
+      front.classList.remove('visible');
+      back.classList.add('visible');
+      const tmp = front; front = back; back = tmp;
+
+      if (showLabels && sponsor.name) {
+        labelEl.textContent = sponsor.name;
+        labelEl.classList.add('visible');
+      } else {
+        labelEl.classList.remove('visible');
+      }
+    };
+  }
+
+  function loop() {
+    showNext();
+    setTimeout(loop, intervalMs);
+  }
+
+  // Recarrega os dados periodicamente para refletir alterações feitas no celular,
+  // sem precisar reiniciar a fonte de navegador na live.
+  loadData().then(() => { loop(); });
+  setInterval(loadData, 20000);
+})();
+</script>
+</body>
+</html>
