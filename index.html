@@ -31,7 +31,13 @@
     max-height: 80%;
     object-fit: contain;
     opacity: 0;
-    transform: scale(var(--logo-scale, 1));
+    const logoScale = Math.max(0.1, parseFloat(params.get('scale') || "1"));
+
+    imgA.style.maxWidth = (88 * logoScale) + "%";
+    imgA.style.maxHeight = (80 * logoScale) + "%";
+    
+    imgB.style.maxWidth = (88 * logoScale) + "%";
+    imgB.style.maxHeight = (80 * logoScale) + "%";
     transition:
         opacity 0.7s ease,
         transform 0.2s ease;
